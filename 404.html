@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#94070a" />
+    <meta
+      name="description"
+      content="合成北京大学，一款轻量、低功耗的校徽合成小游戏。"
+    />
+    <title>合成北京大学</title>
+    <link rel="icon" href="./assets/badges/pku.png" type="image/png" />
+    <script type="module" crossorigin src="./assets/index-_DOlKiVZ.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DOc0jkoI.css">
+  </head>
+  <body>
+    <main class="app" id="app" data-game-status="loading">
+      <header class="topbar">
+        <div class="brand">
+          <h1>合成北京大学</h1>
+          <p>左右拖动 · 松手落下</p>
+        </div>
+
+        <div class="metrics" aria-label="游戏成绩">
+          <div class="metric metric-score">
+            <span>得分</span>
+            <strong id="score" aria-live="polite">0</strong>
+          </div>
+          <div class="metric">
+            <span>最高</span>
+            <strong id="bestScore">0</strong>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button class="icon-button" id="soundButton" type="button" aria-label="关闭声音" aria-pressed="true">
+            <span class="sound-icon" id="soundIcon" aria-hidden="true"></span>
+          </button>
+          <button class="icon-button" id="pauseButton" type="button" aria-label="暂停游戏">
+            <span class="pause-icon" aria-hidden="true"></span>
+          </button>
+          <button class="icon-button" id="restartButton" type="button" aria-label="重新开始">
+            <span class="restart-icon" aria-hidden="true">↻</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="board" id="board" aria-label="合成北京大学游戏区域">
+        <canvas id="gameCanvas" width="400" height="620" aria-label="游戏画布"></canvas>
+
+        <div class="gesture-hint" id="gestureHint" aria-hidden="true">
+          <span class="gesture-line"></span>
+          <strong>拖动瞄准</strong>
+          <span>松手落下</span>
+        </div>
+
+        <div class="overlay" id="loadingOverlay" role="status" aria-live="polite">
+          <div class="overlay-card loading-card">
+            <div class="loading-seal" aria-hidden="true">北</div>
+            <h2>正在加载校徽</h2>
+            <p>马上开始合成</p>
+          </div>
+        </div>
+
+        <div class="overlay version-overlay" id="versionOverlay" role="dialog" aria-modal="true" aria-labelledby="versionTitle" hidden>
+          <div class="overlay-card version-card">
+            <p class="eyebrow">选择游戏版本</p>
+            <h2 id="versionTitle">你喜欢哪种合成爆炸？</h2>
+            <p class="overlay-copy">两个版本的玩法和难度相同，只有合成时的弹射力度不同。</p>
+            <div class="version-options">
+              <button class="version-option is-recommended" id="classicVersionButton" type="button">
+                <span class="version-number">版本 1 · 推荐</span>
+                <strong>经典爆炸</strong>
+                <small>合成时可炸开周围校徽，带来更大惊喜和不确定性</small>
+              </button>
+              <button class="version-option" id="softVersionButton" type="button">
+                <span class="version-number">版本 2</span>
+                <strong>轻爆版</strong>
+                <small>推力更柔和，小校徽不容易飞出屏幕</small>
+              </button>
+            </div>
+            <button class="secondary-button version-cancel" id="versionCancelButton" type="button" hidden>取消切换</button>
+          </div>
+        </div>
+
+        <div class="overlay" id="pauseOverlay" role="dialog" aria-modal="true" aria-labelledby="pauseTitle" hidden>
+          <div class="overlay-card">
+            <p class="eyebrow">暂时离开一下</p>
+            <h2 id="pauseTitle">游戏已暂停</h2>
+            <p class="overlay-copy">继续后从原状态恢复，不补算后台时间。</p>
+            <button class="primary-button" id="resumeButton" type="button">继续游戏</button>
+          </div>
+        </div>
+
+        <div class="overlay" id="restartOverlay" role="dialog" aria-modal="true" aria-labelledby="restartTitle" hidden>
+          <div class="overlay-card">
+            <h2 id="restartTitle">重新开始？</h2>
+            <p class="overlay-copy">当前进度和本局得分都会清空。</p>
+            <div class="button-row">
+              <button class="secondary-button" id="restartCancelButton" type="button">取消</button>
+              <button class="primary-button" id="restartConfirmButton" type="button">重新开始</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="overlay" id="gameOverOverlay" role="dialog" aria-modal="true" aria-labelledby="gameOverTitle" hidden>
+          <div class="overlay-card result-card">
+            <p class="eyebrow">本局结束</p>
+            <h2 id="gameOverTitle">差一点就更大了</h2>
+            <div class="result-badge" id="resultBadge">
+              <span>最高等级</span>
+              <img id="highestItemImage" alt="" />
+            </div>
+            <div class="result-score">
+              <span>本局得分</span>
+              <strong id="finalScore">0</strong>
+            </div>
+            <p class="new-record" id="newRecord" hidden>新纪录！</p>
+            <button class="primary-button" id="againButton" type="button">再合一次</button>
+          </div>
+        </div>
+
+        <div class="overlay history-overlay" id="historyOverlay" role="dialog" aria-modal="true" aria-labelledby="historyTitle" hidden>
+          <div class="overlay-card history-card">
+            <p class="eyebrow">本机记录</p>
+            <h2 id="historyTitle">历史记录</h2>
+            <p class="overlay-copy">两个版本分别统计，只记录每局打破最高分时的最终成绩。</p>
+            <div class="history-summary">
+              <div>
+                <span>经典爆炸最高</span>
+                <strong id="classicBestScore">0</strong>
+              </div>
+              <div>
+                <span>轻爆版最高</span>
+                <strong id="softBestScore">0</strong>
+              </div>
+            </div>
+            <div class="history-list" id="historyList"></div>
+            <button class="primary-button history-close-button" id="historyCloseButton" type="button">关闭</button>
+          </div>
+        </div>
+
+        <div class="overlay leaderboard-overlay" id="leaderboardOverlay" role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle" hidden>
+          <div class="overlay-card leaderboard-card">
+            <button class="leaderboard-top-close" id="leaderboardCloseButton" type="button" aria-label="关闭排行榜">×</button>
+            <p class="eyebrow">私人内测</p>
+            <h2 id="leaderboardTitle">排行榜</h2>
+
+            <div id="leaderboardConsentView">
+              <p class="overlay-copy leaderboard-intro">参与排行榜前，请确认以下最小匿名数据会被上传到新加坡服务器。</p>
+              <ul class="privacy-list">
+                <li>自填昵称、两个模式的最高分和成绩更新时间</li>
+                <li>好友房名称、邀请关系和房间成员身份</li>
+                <li>不会上传手机号、通讯录、定位或真实姓名</li>
+              </ul>
+              <label class="form-field">
+                <span>排行榜昵称</span>
+                <input id="leaderboardNicknameInput" maxlength="12" autocomplete="nickname" placeholder="合成玩家1234" />
+              </label>
+              <label class="check-field">
+                <input id="leaderboardGlobalOptIn" type="checkbox" />
+                <span>同意后加入自愿全局榜，可随时关闭</span>
+              </label>
+              <label class="check-field">
+                <input id="leaderboardUploadBest" type="checkbox" checked />
+                <span>将当前本机最高分作为初始成绩上传</span>
+              </label>
+              <p class="form-status" id="leaderboardConsentStatus" aria-live="polite"></p>
+              <button class="primary-button" id="leaderboardConsentButton" type="button">同意并继续</button>
+              <button class="secondary-button leaderboard-secondary-action" id="leaderboardDeclineButton" type="button">暂不参与</button>
+              <details class="privacy-details">
+                <summary>查看完整隐私说明</summary>
+                <div>
+                  <p>联网数据存储在新加坡区域。只有主动加入后才会上传昵称、双版本最高分、好友房关系和成绩校验数据。</p>
+                  <p>不会上传手机号、邮箱、通讯录、定位或真实姓名。你可以随时关闭全局榜、退出好友房，或删除全部云端数据。</p>
+                </div>
+              </details>
+            </div>
+
+            <div id="leaderboardAppView" hidden>
+              <div class="leaderboard-tabs" role="tablist" aria-label="排行榜分类">
+                <button class="leaderboard-tab is-active" id="leaderboardGlobalTab" type="button">全局榜</button>
+                <button class="leaderboard-tab" id="leaderboardRoomTab" type="button">好友房</button>
+                <button class="leaderboard-tab" id="leaderboardMyTab" type="button">我的</button>
+              </div>
+              <div class="leaderboard-toolbar">
+                <div class="mode-switch" aria-label="排行榜版本">
+                  <button class="mode-choice is-active" id="leaderboardClassicMode" type="button">经典爆炸</button>
+                  <button class="mode-choice" id="leaderboardSoftMode" type="button">轻爆版</button>
+                </div>
+                <button class="icon-button" id="leaderboardRefreshButton" type="button" aria-label="刷新排行榜">↻</button>
+              </div>
+              <p class="network-status" id="leaderboardStatus" aria-live="polite"></p>
+
+              <section id="globalRankingPanel">
+                <div class="leaderboard-list" id="globalLeaderboardList"></div>
+              </section>
+
+              <section id="roomRankingPanel" hidden>
+                <div id="roomEmptyView">
+                  <div class="room-create-card">
+                    <label class="form-field">
+                      <span>房名</span>
+                      <input id="roomNameInput" maxlength="20" placeholder="例如：宿舍冲榜" />
+                    </label>
+                    <button class="primary-button" id="createRoomButton" type="button">创建好友房</button>
+                  </div>
+                  <div class="room-divider"><span>或使用邀请码</span></div>
+                  <div class="join-room-row">
+                    <input id="joinCodeInput" maxlength="8" autocapitalize="characters" placeholder="8 位邀请码" />
+                    <button class="secondary-button" id="joinRoomButton" type="button">加入</button>
+                  </div>
+                </div>
+
+                <div id="roomContentView" hidden>
+                  <div class="room-heading">
+                    <div>
+                      <span>好友房</span>
+                      <strong id="roomHeaderName">好友房</strong>
+                    </div>
+                    <button class="text-button" id="leaveRoomButton" type="button">退出</button>
+                  </div>
+                  <div class="invite-code-row">
+                    <span>邀请码</span>
+                    <strong id="roomInviteCode">--------</strong>
+                    <button class="text-button" id="copyRoomCodeButton" type="button">复制</button>
+                    <button class="text-button" id="shareRoomCodeButton" type="button">分享</button>
+                  </div>
+                  <div class="leaderboard-list" id="roomLeaderboardList"></div>
+                  <div class="room-owner-actions" id="roomOwnerActions" hidden>
+                    <button class="secondary-button" id="renameRoomButton" type="button">重命名</button>
+                    <button class="secondary-button danger-button" id="dissolveRoomButton" type="button">解散好友房</button>
+                  </div>
+                </div>
+              </section>
+
+              <section id="myRankingPanel" hidden>
+                <div class="profile-card">
+                  <label class="form-field">
+                    <span>昵称</span>
+                    <input id="profileNicknameInput" maxlength="12" />
+                  </label>
+                  <button class="secondary-button" id="saveNicknameButton" type="button">保存昵称</button>
+                  <label class="check-field">
+                    <input id="profileGlobalOptIn" type="checkbox" />
+                    <span>加入全局排行榜</span>
+                  </label>
+                </div>
+                <div class="profile-card">
+                  <p class="profile-title">匿名身份恢复码</p>
+                  <p class="profile-note">恢复码只用于换设备找回匿名身份，不要公开分享。</p>
+                  <code id="recoveryCodeDisplay">尚未生成</code>
+                  <div class="button-row">
+                    <button class="secondary-button" id="generateRecoveryCodeButton" type="button">生成恢复码</button>
+                    <button class="secondary-button" id="copyRecoveryCodeButton" type="button">复制</button>
+                  </div>
+                  <label class="form-field recovery-field">
+                    <span>使用恢复码</span>
+                    <input id="redeemRecoveryCodeInput" maxlength="14" placeholder="XXXX-XXXX-XXXX" />
+                  </label>
+                  <button class="secondary-button" id="redeemRecoveryCodeButton" type="button">恢复匿名身份</button>
+                </div>
+                <button class="secondary-button danger-button" id="deleteCloudDataButton" type="button">退出排行并删除云端数据</button>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="app-footer">
+        <span>低功耗单机版</span>
+        <span class="footer-dot"></span>
+        <span>最高分保存在本机</span>
+        <button class="version-switch" id="versionSwitchButton" type="button">版本：轻爆版 · 切换</button>
+        <button class="version-switch" id="historyButton" type="button">历史记录</button>
+        <button class="version-switch" id="leaderboardButton" type="button">排行榜</button>
+      </footer>
+      <p class="unofficial-notice">非北京大学官方作品 · 私人测试版</p>
+    </main>
+
+  </body>
+</html>
